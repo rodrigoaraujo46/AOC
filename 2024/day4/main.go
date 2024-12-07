@@ -22,14 +22,55 @@ func main() {
 
 	if len(os.Args) < 3 {
 		fmt.Printf("PART 1: %v\n", part1(matrix))
-		//fmt.Printf("PART 2: %v\n", part2(col1, col2))
+		fmt.Printf("PART 2: %v\n", part2(matrix))
 		return
 	}
 	if os.Args[2] == "2" {
-		//fmt.Printf("PART 2: %v", part2(col1, col2))
+		fmt.Printf("PART 2: %v", part2(matrix))
 		return
 	}
 	fmt.Printf("PART 1: %v", part1(matrix))
+}
+
+func part2(matrix [][]rune) int {
+	ans := 0
+	for y := 0; y < len(matrix); y++ {
+		for x := 0; x < len(matrix[0]); x++ {
+			if matrix[y][x] == 'A' {
+				if !valid(matrix, y-1, x-1) {
+					continue
+				}
+				topL := matrix[y-1][x-1]
+
+				if !valid(matrix, y-1, x+1) {
+					continue
+				}
+				topR := matrix[y-1][x+1]
+
+				if !valid(matrix, y+1, x-1) {
+					continue
+				}
+				botL := matrix[y+1][x-1]
+
+				if !valid(matrix, y+1, x+1) {
+					continue
+				}
+				botR := matrix[y+1][x+1]
+
+				if botR != topL && botL != topR {
+					ans++
+				}
+			}
+		}
+	}
+	return ans
+}
+
+func valid(matrix [][]rune, y int, x int) bool {
+	if 0 <= x && x < len(matrix[0]) && 0 <= y && y < len(matrix) && matrix[y][x] != 'A' && matrix[y][x] != 'X'{
+		return true
+	}
+	return false
 }
 
 func part1(matrix [][]rune) int {
