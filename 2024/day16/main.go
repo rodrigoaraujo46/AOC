@@ -56,6 +56,11 @@ func Key(r Reindeer) ReindeerKey {
 	}
 }
 
+type Position struct {
+	X int
+	Y int
+}
+
 func (c *Reindeer) Turn(counter bool) {
 	c.Points += 1000
 	if c.Dir == "E" {
@@ -175,6 +180,73 @@ func solveMaze(visited map[ReindeerKey]int, maze [][]string, c *Reindeer) int {
 	return min(fw, rw, lw, bw)
 }
 
+func (c *Reindeer) Forward2(visited map[ReindeerKey]int, maze [][]string, best int) error {
+	if c.Dir == "E" {
+		c.X += 1
+		c.Points += 1
+		if maze[c.Y][c.X] == "#" || c.Points > best || getScore(visited, Key(*c)) < c.Points {
+			return MazeError{}
+		}
+		visited[Key(*c)] = c.Points
+		return nil
+	}
+	if c.Dir == "S" {
+		c.Y += 1
+		c.Points += 1
+		if maze[c.Y][c.X] == "#" || c.Points > best || getScore(visited, Key(*c)) < c.Points {
+			return MazeError{}
+		}
+		visited[Key(*c)] = c.Points
+		return nil
+	}
+	if c.Dir == "W" {
+		c.X -= 1
+		c.Points += 1
+		if maze[c.Y][c.X] == "#" || c.Points > best || getScore(visited, Key(*c)) < c.Points {
+			return MazeError{}
+		}
+		visited[Key(*c)] = c.Points
+		return nil
+	}
+	c.Y -= 1
+	c.Points += 1
+	if maze[c.Y][c.X] == "#" || c.Points > best || getScore(visited, Key(*c)) < c.Points {
+		return MazeError{}
+	}
+	visited[Key(*c)] = c.Points
+	return nil
+}
+
+func GetPaths(paths *[][]Position, path []Position, visited map[ReindeerKey]int, maze [][]string, c *Reindeer, best int) {
+	path = append(path, Position{X: c.X, Y: c.Y})
+
+	if maze[c.Y][c.X] == "E" && c.Points == best {
+		*paths = append(*paths, append([]Position(nil), path...))
+	}
+
+	f := c.Copy()
+	if f.Forward2(visited, maze, best) == nil {
+		GetPaths(paths, path, visited, maze, f, best)
+	}
+	r := c.Copy()
+	r.Turn(false)
+	if r.Forward2(visited, maze, best) == nil {
+		GetPaths(paths, path, visited, maze, r, best)
+	}
+
+	l := c.Copy()
+	l.Turn(true)
+	if l.Forward2(visited, maze, best) == nil {
+		GetPaths(paths, path, visited, maze, l, best)
+	}
+	b := c.Copy()
+	b.Turn(true)
+	b.Turn(true)
+	if b.Forward2(visited, maze, best) == nil {
+		GetPaths(paths, path, visited, maze, b, best)
+	}
+}
+
 func part1(maze [][]string) int {
 	c := &Reindeer{}
 
@@ -194,17 +266,8 @@ Outer:
 	return solveMaze(reindeerMap, maze, c)
 }
 
-func printCharMatrix(matrix [][]string) {
-	for _, row := range matrix {
-		for _, char := range row {
-			fmt.Print(char)
-		}
-		fmt.Println()
-	}
-}
-
 func part2(maze [][]string) int {
-	printCharMatrix(maze)
+	bestPathSize := part1(maze)
 	c := &Reindeer{}
 
 Outer:
@@ -219,5 +282,13 @@ Outer:
 		}
 	}
 	reindeerMap := make(map[ReindeerKey]int)
-	return solveMaze(reindeerMap, maze, c)
+	var paths [][]Position
+	GetPaths(&paths, []Position{}, reindeerMap, maze, c, bestPathSize)
+	pathSet := make(map[Position]bool)
+	for _, path := range paths {
+		for _, pos := range path {
+			pathSet[pos] = true
+		}
+	}
+	return len(pathSet)
 }
